@@ -6,7 +6,9 @@
 #define TFT_CS 53
 #define TFT_RST 48
 #define TFT_DC 49
-#define LED_PIN    7
+#define LED_PIN 7
+#define LED_PIN2 6
+#define LED_PIN3 5
 
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 RTC_DS3231 rtc;
@@ -30,7 +32,7 @@ Time,Price\n\
 14,400\n\
 15,350\n\
 16,300\n\
-17,400\n\
+17,450\n\
 18,500\n\
 19,600\n\
 20,500\n\
@@ -116,15 +118,30 @@ void checkElectricityPrice(DateTime now) {
     int priceInCents = atoi(strchr(priceStr, ',') + 1);
     float priceInDollars = static_cast<float>(priceInCents) / 100.0;
 
-    if (priceInDollars < 5.01) {
+    if (priceInDollars < 3.99) {
       digitalWrite(LED_PIN, HIGH);
-      tft.setTextSize(1);
+      digitalWrite(LED_PIN2,LOW);
+      digitalWrite(LED_PIN3,LOW);
+      tft.setTextSize(2);
       tft.setTextColor(ST7735_GREEN);
       tft.print("\nLow price: $");
       tft.println(priceInDollars);
-    } else {
-      digitalWrite(LED_PIN, LOW);
-      tft.setTextSize(1);
+    } else if(priceInDollars<4.99){
+      digitalWrite(LED_PIN2, HIGH);
+      digitalWrite(LED_PIN3,LOW);
+      digitalWrite(LED_PIN,LOW);
+      tft.setTextSize(2);
+      tft.setTextColor(ST7735_YELLOW);
+      tft.print("\nMid price: $");
+      tft.println(priceInDollars);
+
+    }
+    
+    else {
+      digitalWrite(LED_PIN3,HIGH);
+      digitalWrite(LED_PIN2,LOW);
+      digitalWrite(LED_PIN,LOW);
+      tft.setTextSize(2);
       tft.setTextColor(ST7735_RED);
       tft.print("\nHigh price: $");
       tft.println(priceInDollars);
