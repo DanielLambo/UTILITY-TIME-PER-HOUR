@@ -131,7 +131,7 @@ void checkElectricityPrice(DateTime now) {
       digitalWrite(LED_PIN2, HIGH);
       digitalWrite(LED_PIN3,LOW);
       digitalWrite(LED_PIN,LOW);
-      tft.setTextSize(2);
+      tft.setTextSize(1);
       tft.setTextColor(ST7735_YELLOW);
       tft.print("\nMid price: $");
       tft.println(priceInDollars);
@@ -144,7 +144,7 @@ void checkElectricityPrice(DateTime now) {
       digitalWrite(LED_PIN3,HIGH);
       digitalWrite(LED_PIN2,LOW);
       digitalWrite(LED_PIN,LOW);
-      tft.setTextSize(2);
+      tft.setTextSize(1);
       tft.setTextColor(ST7735_RED);
       tft.print("\nHigh price: $");
       tft.println(priceInDollars);
