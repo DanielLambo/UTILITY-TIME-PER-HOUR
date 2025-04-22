@@ -3,14 +3,17 @@
 #include <Adafruit_ST7735.h>
 #include <RTClib.h>
 
-#define TFT_CS 53
-#define TFT_RST 48
-#define TFT_DC 49
-#define LED_PIN 8
-#define LED_PIN2 6
-#define LED_PIN3 5
+// TFT Pins for Arduino Uno
+#define cs   10
+#define dc   9
+#define rst  8
 
-Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
+// Define the LED pins
+#define LED_A 2  // High demand LED
+#define LED_B 3  // Medium demand LED
+#define LED_C 4  // Low demand LED
+
+Adafruit_ST7735 tft = Adafruit_ST7735(cs, dc, rst);
 RTC_DS3231 rtc;
 
 const char* csvData = "\
@@ -45,6 +48,7 @@ void setup() {
 
   // Initialize TFT
   tft.initR(INITR_BLACKTAB);
+  tft.fillScreen(ST77XX_BLACK);
 
   // Initialize RTC
   if (!rtc.begin()) {
@@ -52,45 +56,35 @@ void setup() {
     while (1);
   }
 
-  if (rtc.lostPower()) {
-    Serial.println("RTC lost power, let's set the time!");
-    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-  }
+ //rtc.adjust(DateTime(2025, 4, 21, 22, 48, 0));  // Year, Month, Day, Hour, Min, Sec
 
-  pinMode(LED_PIN, OUTPUT);
+  // Setup LED pins
+  pinMode(LED_A, OUTPUT);
+  pinMode(LED_B, OUTPUT);
+  pinMode(LED_C, OUTPUT);
 }
 
 void loop() {
   DateTime now = rtc.now();
-
-  // Display the time, weather, and check price
   displayTimeWeatherAndCheckPrice(now);
-
-  delay(1000); // Update every 1 second
+  delay(1000); // Update every second
 }
 
 void displayTimeWeatherAndCheckPrice(DateTime now) {
-  tft.fillScreen(ST7735_BLACK);
+  tft.fillScreen(ST77XX_BLACK);
   tft.setCursor(0, 0);
-
-  // Print the time
   tft.setTextSize(2);
-  tft.setTextColor(ST7735_WHITE);
+  tft.setTextColor(ST77XX_WHITE);
   tft.print(now.hour(), DEC);
   tft.print(':');
-  if (now.minute() < 10) {
-    tft.print('0');
-  }
+  if (now.minute() < 10) tft.print('0');
   tft.print(now.minute(), DEC);
   tft.print(':');
-  if (now.second() < 10) {
-    tft.print('0');
-  }
+  if (now.second() < 10) tft.print('0');
   tft.println(now.second(), DEC);
 
-  // Print the weather based on the time
   tft.setTextSize(1);
-  tft.setTextColor(ST7735_CYAN);
+  tft.setTextColor(ST77XX_CYAN);
 
   if (now.hour() >= 0 && now.hour() < 7) {
     tft.print("Weather: Cold");
@@ -102,54 +96,46 @@ void displayTimeWeatherAndCheckPrice(DateTime now) {
     tft.print("Weather: Warm");
   }
 
-  // Check electricity price
   checkElectricityPrice(now);
 }
 
 void checkElectricityPrice(DateTime now) {
   int hour = now.hour();
-
   char searchStr[4];
-  sprintf(searchStr, "%02d", hour);
+  sprintf(searchStr, "%d,", hour); // Match "hour," format exactly
 
   char* priceStr = strstr(csvData, searchStr);
-
   if (priceStr != NULL) {
     int priceInCents = atoi(strchr(priceStr, ',') + 1);
     float priceInDollars = static_cast<float>(priceInCents) / 100.0;
 
     if (priceInDollars < 3.99) {
-      digitalWrite(LED_PIN, HIGH);
-      digitalWrite(LED_PIN2,LOW);
-      digitalWrite(LED_PIN3,LOW);
-      tft.setTextSize(1);
-      tft.setTextColor(ST7735_GREEN);
-      tft.print("\nLow price: $");
+      digitalWrite(LED_C, HIGH);
+      digitalWrite(LED_B, LOW);
+      digitalWrite(LED_A, LOW);
+      tft.setTextColor(ST77XX_GREEN);
+      tft.setCursor(0, 50);
+      tft.print("Low price: $");
       tft.println(priceInDollars);
-      tft.println("\nadvisable to switch on\n all appliances");
-    } else if(priceInDollars<4.99){
-      digitalWrite(LED_PIN2, HIGH);
-      digitalWrite(LED_PIN3,LOW);
-      digitalWrite(LED_PIN,LOW);
-      tft.setTextSize(1);
-      tft.setTextColor(ST7735_YELLOW);
-      tft.print("\nMid price: $");
+      tft.println("Use all appliances.");
+    } else if (priceInDollars < 4.99) {
+      digitalWrite(LED_B, HIGH);
+      digitalWrite(LED_C, LOW);
+      digitalWrite(LED_A, LOW);
+      tft.setTextColor(ST77XX_YELLOW);
+      tft.setCursor(0, 50);
+      tft.print("Mid price: $");
       tft.println(priceInDollars);
-      tft.println("\nadvisable to switch\n on priority appliances");
-
-
-    }
-    
-    else {
-      digitalWrite(LED_PIN3,HIGH);
-      digitalWrite(LED_PIN2,LOW);
-      digitalWrite(LED_PIN,LOW);
-      tft.setTextSize(1);
-      tft.setTextColor(ST7735_RED);
-      tft.print("\nHigh price: $");
+      tft.println("Use priority appliances.");
+    } else {
+      digitalWrite(LED_A, HIGH);
+      digitalWrite(LED_B, LOW);
+      digitalWrite(LED_C, LOW);
+      tft.setTextColor(ST77XX_RED);
+      tft.setCursor(0, 50);
+      tft.print("High price: $");
       tft.println(priceInDollars);
-      tft.println("\nadvisable to turn off\n all appliances");
-
+      tft.println("Turn off appliances!");
     }
   }
 }
